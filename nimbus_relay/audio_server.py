@@ -68,12 +68,15 @@ class AudioStreamServer:
                 try:
                     self.send_response(200)
                     self.send_header("Content-Type", "audio/mpeg")
+                    self.send_header("icy-name", "Nimbus NOAA Weather Radio")
                     self.send_header(
-                        "Cache-Control", "no-cache, no-store, must-revalidate"
+                        "icy-description", "NOAA Weather Radio via Nimbus Relay"
                     )
+                    self.send_header("icy-genre", "Weather")
+                    self.send_header("icy-br", "64")
+                    self.send_header("Accept-Ranges", "none")
+                    self.send_header("Cache-Control", "no-cache")
                     self.send_header("Pragma", "no-cache")
-                    self.send_header("Expires", "0")
-                    self.send_header("Access-Control-Allow-Origin", "*")
                     self.send_header("Connection", "close")
                     self.end_headers()
 
