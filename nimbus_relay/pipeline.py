@@ -5,6 +5,7 @@ import queue
 import subprocess
 import threading
 import time
+from collections import deque
 from dataclasses import dataclass
 
 from .config import RelayConfig
@@ -28,13 +29,42 @@ class NimbusPipeline:
         self,
         config: RelayConfig,
     ) -> None:
+        self.audio_clients: set[queue.Queue[bytes]] = set()
+        self.audio_clients_lock = threading.Lock()
+        self.audio_preroll: deque[bytes] = deque(maxlen=32)
+
         self.config = config
-
         self.line_queue: queue.Queue[str] = queue.Queue(maxsize=256)
-
         self.processes: PipelineProcesses | None = None
-
         self.running = False
+
+    def register_audio_client(self) -> queue.Queue[bytes]:
+        q: queue.Queue[bytes] = queue.Queue(maxsize=128)
+
+        with self.audio_clients_lock:
+            for chunk in self.audio_preroll:
+                q.put_nowait(chunk)
+
+            self.audio_clients.add(q)
+
+        return q
+
+    def unregister_audio_client(self, q: queue.Queue[bytes]) -> None:
+        with self.audio_clients_lock:
+            self.audio_clients.discard(q)
+
+    def _broadcast_audio_chunk(self, chunk: bytes) -> None:
+        with self.audio_clients_lock:
+            self.audio_preroll.append(chunk)
+            dead: set[queue.Queue[bytes]] = set()
+
+            for q in self.audio_clients:
+                try:
+                    q.put_nowait(chunk)
+                except queue.Full:
+                    dead.add(q)
+
+            self.audio_clients.difference_update(dead)
 
     def start(self) -> None:
         if self.running:
@@ -213,6 +243,35 @@ class NimbusPipeline:
             daemon=True,
         ).start()
 
+        threading.Thread(
+            target=self._read_audio_ffmpeg_stdout, daemon=True, name="audio-broadcast"
+        ).start()
+
+    def _read_audio_ffmpeg_stdout(self) -> None:
+        assert self.processes is not None
+
+        stdout = self.processes.audio_ffmpeg.stdout
+
+        if stdout is None:
+            return
+
+        try:
+            while self.running:
+                chunk = stdout.read(AUDIO_CHUNK)
+
+                if not chunk:
+                    _LOGGER.error("audio ffmpeg stdout ended")
+                    self.restart()
+
+                    return
+
+                self._broadcast_audio_chunk(chunk)
+
+        except Exception:
+            _LOGGER.exception("audio broadcaster crashed")
+
+            self.restart()
+
     def stop(self) -> None:
         self.running = False
 
@@ -261,22 +320,6 @@ class NimbusPipeline:
             and self.processes.multimon.poll() is None
             and self.processes.audio_ffmpeg.poll() is None
         )
-
-    def read_audio_chunk(self) -> bytes | None:
-        if not self.processes:
-            return None
-
-        stdout = self.processes.audio_ffmpeg.stdout
-
-        if stdout is None:
-            return None
-
-        chunk = stdout.read(AUDIO_CHUNK)
-
-        if not chunk:
-            return None
-
-        return chunk
 
     def _tee_rtl_audio(self) -> None:
         assert self.processes is not None

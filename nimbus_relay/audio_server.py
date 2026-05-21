@@ -65,41 +65,28 @@ class AudioStreamServer:
 
                 _LOGGER.info("Audio client connected from %s", self.client_address[0])
 
+                client_queue = pipeline.register_audio_client()
+
                 try:
                     self.send_response(200)
                     self.send_header("Content-Type", "audio/mpeg")
                     self.send_header("icy-name", "Nimbus NOAA Weather Radio")
-                    self.send_header(
-                        "icy-description", "NOAA Weather Radio via Nimbus Relay"
-                    )
+                    self.send_header("icy-description", "NOAA Weather Radio via Nimbus")
                     self.send_header("icy-genre", "Weather")
                     self.send_header("icy-br", "64")
                     self.send_header("Accept-Ranges", "none")
                     self.send_header("Cache-Control", "no-cache")
-                    self.send_header("Pragma", "no-cache")
                     self.send_header("Connection", "close")
                     self.end_headers()
 
                     while True:
-                        chunk = pipeline.read_audio_chunk()
-
-                        if not chunk:
-                            break
+                        chunk = client_queue.get(timeout=10)
 
                         self.wfile.write(chunk)
                         self.wfile.flush()
 
-                except BrokenPipeError:
-                    pass
-                except ConnectionResetError:
-                    pass
-                except Exception:
-                    _LOGGER.exception("Audio client stream failed")
                 finally:
-                    _LOGGER.info(
-                        "Audio client disconnected from %s",
-                        self.client_address[0],
-                    )
+                    pipeline.unregister_audio_client(client_queue)
 
             def log_message(self, format: str, *args) -> None:
                 _LOGGER.debug("HTTP " + format, *args)
