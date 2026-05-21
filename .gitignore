@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtualenv
+.venv/
+venv/
+env/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# dotenv / local config
+.env
+config.env
+
+# pytest
+.pytest_cache/
+
+# mypy / pyright
+.mypy_cache/
+.pyright/
+
+# Ruff
+.ruff_cache/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Runtime
+*.pid
+
+# Audio artifacts
+*.mp3
+*.wav
+
+# Systemd temp/debug
+journal.log
+
+# Local SDR testing
+rtl_test_output.txt
