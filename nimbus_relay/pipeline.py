@@ -132,12 +132,11 @@ class NimbusPipeline:
 
         audio_ffmpeg_cmd = [
             "ffmpeg",
-            "-hide_banner-loglevel",
+            "-hide_banner",
+            "-loglevel",
             "warning",
             "-fflags",
             "nobuffer",
-            "-flags",
-            "low_delay",
             "-f",
             "s16le",
             "-ar",
@@ -156,13 +155,11 @@ class NimbusPipeline:
             "22050",
             "-ac",
             "1",
+            "-content_type",
+            "audio/mpeg",
             "-f",
             "mp3",
-            "-write_xing",
-            "0",
-            "-flush_packets",
-            "1",
-            "pipe:1",
+            "icecast://source:hackme@0.0.0.0:8000/nwr.mp3",
         ]
 
         rtl_proc = subprocess.Popen(
