@@ -256,28 +256,6 @@ Run:
 NIMBUS_RELAY_CONFIG=./config.env python -m nimbus_relay.main
 ```
 
----
-
-# Repository Layout
-
-```text
-nimbus-relay/
-├── Makefile
-├── README.md
-├── pyproject.toml
-├── config.env.example
-├── nimbus_relay/
-│   ├── __init__.py
-│   ├── main.py
-│   ├── config.py
-│   ├── mqtt_client.py
-│   ├── pipeline.py
-│   ├── audio_server.py
-│   └── same.py
-```
-
----
-
 # Makefile Commands
 
 | Command | Description |
@@ -306,6 +284,132 @@ sudo systemctl enable nimbus-relay
 ```
 
 ---
+
+# NOAA Weather Radio Frequencies
+
+Nimbus Relay receives broadcasts from NOAA Weather Radio (NWR), a nationwide network of radio stations operated by the National Weather Service.
+
+These broadcasts carry:
+
+- weather forecasts
+- severe weather alerts
+- tornado warnings
+- flash flood warnings
+- civil emergency messages
+- SAME/EAS encoded alerts
+
+Nimbus Relay tunes your RTL-SDR to one of the NOAA VHF frequencies and continuously monitors the broadcast stream for SAME headers.
+
+---
+
+# Common NOAA Weather Radio Frequencies
+
+| Frequency | Channel |
+|---|---|
+| 162.400 MHz | WX2 |
+| 162.425 MHz | WX4 |
+| 162.450 MHz | WX5 |
+| 162.475 MHz | WX3 |
+| 162.500 MHz | WX6 |
+| 162.525 MHz | WX7 |
+| 162.550 MHz | WX1 |
+
+Example configuration:
+
+```env
+SDR_FREQUENCY=162.550M
+```
+
+---
+
+# Finding Your Local NOAA Frequency
+
+You can find your local NOAA Weather Radio transmitter here:
+
+ [https://www.weather.gov/nwr/station_search](https://www.weather.gov/nwr/station_search)
+
+Or view the nationwide coverage map:
+
+ [https://www.weather.gov/nwr/Maps](https://www.weather.gov/nwr/Maps)
+
+---
+
+# Choosing the Best Frequency
+
+Pick the station that provides:
+
+- the strongest signal
+- the clearest audio
+- coverage for your county/region
+
+You can test reception manually:
+
+```bash
+rtl_fm -f 162.550M -M fm -s 32000 -g 28 -
+```
+
+Or use:
+
+```bash
+rtl_test
+```
+
+to verify SDR functionality.
+
+---
+
+# SAME / EAS Background
+
+NOAA Weather Radio uses the SAME protocol:
+
+```text
+Specific Area Message Encoding
+```
+
+SAME is part of the broader Emergency Alert System (EAS).
+
+A SAME message contains:
+
+- event type
+- affected counties/FIPS codes
+- issuing weather office
+- alert duration
+- issue timestamp
+
+Example:
+
+```text
+ZCZC-WXR-TOR-048113+0100-1410200-KOUN/NWS-
+```
+
+This example represents:
+
+- Tornado Warning (`TOR`)
+- county FIPS `048113`
+- issued by `KOUN/NWS`
+- valid for 1 hour
+
+Nimbus Relay decodes these headers using:
+
+```text
+multimon-ng
+```
+
+and publishes normalized JSON to MQTT for Home Assistant automation and alerting.
+
+---
+
+# Reception Tips
+
+For best results:
+
+- place the antenna near a window or outside
+- move away from computers or other metallic objects
+- use a VHF-optimized antenna if possible
+- elevate the antenna
+- avoid cheap USB extension cables
+
+NOAA Weather Radio broadcasts are typically very strong and easy to receive within metropolitan areas.
 
 # Troubleshooting
 
