@@ -53,30 +53,29 @@ config:
 	fi
 
 service:
-	sudo tee "$(SERVICE_FILE)" >/dev/null <<'EOF'
-[Unit]
-Description=Nimbus Relay - RTL-SDR NOAA Weather Radio SAME Relay
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=simple
-User=nimbus
-Group=nimbus
-WorkingDirectory=/opt/nimbus-relay
-Environment=NIMBUS_RELAY_CONFIG=/opt/nimbus-relay/config.env
-ExecStart=/opt/nimbus-relay/.venv/bin/nimbus-relay
-Restart=always
-RestartSec=5
-StandardOutput=journal
-StandardError=journal
-
-NoNewPrivileges=true
-PrivateTmp=true
-
-[Install]
-WantedBy=multi-user.target
-EOF
+	sudo sh -c 'printf "%s\n" \
+	"[Unit]" \
+	"Description=Nimbus Relay - RTL-SDR NOAA Weather Radio SAME Relay" \
+	"After=network-online.target" \
+	"Wants=network-online.target" \
+	"" \
+	"[Service]" \
+	"Type=simple" \
+	"User=nimbus" \
+	"Group=nimbus" \
+	"WorkingDirectory=/opt/nimbus-relay" \
+	"Environment=NIMBUS_RELAY_CONFIG=/opt/nimbus-relay/config.env" \
+	"ExecStart=/opt/nimbus-relay/.venv/bin/nimbus-relay" \
+	"Restart=always" \
+	"RestartSec=5" \
+	"StandardOutput=journal" \
+	"StandardError=journal" \
+	"NoNewPrivileges=true" \
+	"PrivateTmp=true" \
+	"" \
+	"[Install]" \
+	"WantedBy=multi-user.target" \
+	> "$(SERVICE_FILE)"'
 	sudo systemctl daemon-reload
 	sudo systemctl enable "$(APP_NAME)"
 
