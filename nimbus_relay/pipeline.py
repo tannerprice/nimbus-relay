@@ -77,26 +77,45 @@ class NimbusPipeline:
             self.config.sdr_gain,
         )
 
-        rtl_cmd = [
-            "rtl_fm",
-            "-d",
-            self.config.sdr_device_index,
-            "-f",
-            self.config.sdr_frequency,
-            "-M",
-            "fm",
-            "-s",
-            self.config.sdr_sample_rate,
-            "-g",
-            self.config.sdr_gain,
-            "-F",
-            "9",
-            "-E",
-            "deemp",
-            "-E",
-            "dc",
-            "-",
-        ]
+        if self.config.audio_input_file:
+            _LOGGER.info("Using audio input file: %s", self.config.audio_input_file)
+
+            rtl_cmd = [
+                "ffmpeg",
+                "-re",
+                "-stream_loop",
+                "-1",
+                "-i",
+                self.config.audio_input_file,
+                "-f",
+                "s16le",
+                "-ar",
+                self.config.sdr_sample_rate,
+                "-ac",
+                "1",
+                "pipe:1",
+            ]
+        else:
+            rtl_cmd = [
+                "rtl_fm",
+                "-d",
+                self.config.sdr_device_index,
+                "-f",
+                self.config.sdr_frequency,
+                "-M",
+                "fm",
+                "-s",
+                self.config.sdr_sample_rate,
+                "-g",
+                self.config.sdr_gain,
+                "-F",
+                "9",
+                "-E",
+                "deemp",
+                "-E",
+                "dc",
+                "-",
+            ]
 
         same_ffmpeg_cmd = [
             "ffmpeg",

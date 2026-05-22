@@ -20,6 +20,7 @@ class RelayConfig:
     sdr_gain: str
     same_sample_rate: str
 
+    audio_input_file: str | None
     audio_stream_host: str
     audio_stream_port: int
     audio_public_host: str | None
@@ -54,6 +55,7 @@ def load_config() -> RelayConfig:
         sdr_sample_rate=_get("SDR_SAMPLE_RATE", "32000"),
         sdr_gain=_get("SDR_GAIN", "28.0"),
         same_sample_rate=_get("SAME_SAMPLE_RATE", "22050"),
+        audio_input_file=_get("AUDIO_INPUT_FILE", "") or None,
         audio_stream_host=_get("AUDIO_STREAM_HOST", "0.0.0.0"),
         audio_stream_port=int(_get("AUDIO_STREAM_PORT", "8765")),
         audio_public_host=_get("AUDIO_PUBLIC_HOST", "") or None,
