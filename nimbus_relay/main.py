@@ -6,7 +6,6 @@ import socket
 import time
 from datetime import datetime, timezone
 
-from .audio_server import AudioStreamServer
 from .config import RelayConfig, load_config
 from .mqtt_client import NimbusMqttClient
 from .pipeline import NimbusPipeline
@@ -36,7 +35,8 @@ def get_local_ip() -> str:
 
 def get_audio_url(config: RelayConfig) -> str:
     host = config.audio_public_host or get_local_ip()
-    return f"http://{host}:{config.audio_stream_port}/nwr.mp3"
+
+    return f"http://{host}:8000/nwr.mp3"
 
 
 class NimbusRelayApp:
@@ -44,7 +44,6 @@ class NimbusRelayApp:
         self.config = config
         self.mqtt = NimbusMqttClient(config)
         self.pipeline = NimbusPipeline(config)
-        self.audio_server = AudioStreamServer(config, self.pipeline)
 
         self.running = False
         self._last_health_publish = 0.0
@@ -58,7 +57,6 @@ class NimbusRelayApp:
         self.mqtt.publish_status("starting")
 
         self.pipeline.start()
-        self.audio_server.start()
 
         audio_url = get_audio_url(self.config)
         self.mqtt.publish_audio_url(audio_url)
@@ -78,7 +76,6 @@ class NimbusRelayApp:
         except Exception:
             pass
 
-        self.audio_server.stop()
         self.pipeline.stop()
 
         try:
